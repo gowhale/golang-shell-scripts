@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+reset
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+if go run ./cmd/pkg-cover ; then
+    printf "${GREEN}PASS: go run ./cmd/pkg-cover${NC}\n"
+
+    if revive -config "revive.toml" -formatter stylish ./... ; then
+        printf "${GREEN}PASS: revive -config "revive.toml" -formatter stylish ./... ${NC}\n"
+        if golangci-lint run ; then
+            printf "${GREEN}PASS: golangci-lint${NC}\n"
+
+            while true; do
+                printf "${BLUE}\nGit Status ${NC}\n\n"
+                git status 
+                printf "\n"
+                read -p "Push to GitHub? " yn
+                case $yn in
+                    [Yy]* )
+                        printf "${BLUE}Pushing to GitHub! ${NC}\n"
+                        git push
+                        break;;
+                    [Nn]* ) exit;;
+                    * ) echo "Please answer yes or no.";;
+                esac
+            done
+        else
+            printf "${RED}FAIL: golangci-lint${NC}\n"
+        fi
+    else
+        printf "${RED}FAIL: revive -config "revive.toml" -formatter stylish ./... ${NC}\n"
+    fi
+else
+    printf "${RED}FAIL: go run ./cmd/pkg-cover${NC}\n"
+fi
